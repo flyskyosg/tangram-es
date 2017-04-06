@@ -1,6 +1,9 @@
 #pragma once
 
 #include "data/tileSource.h"
+#include "platform.h"
+
+#include <unordered_map>
 
 namespace Tangram {
 
@@ -25,16 +28,26 @@ private:
         return url;
     }
 
-    void removePending(const TileID& _tileId);
+    // Each pending tile request is stored as a pair of TileID and UrlRequestHandle.
+    struct TileRequest {
+        TileID tile;
+        UrlRequestHandle request;
+    };
+
+    std::vector<TileRequest> m_pending;
+
+    // Return an iterator to a pending list item with the given TileID, or the item past the end.
+    // This is not mutex-locked.
+    decltype(m_pending)::iterator getPendingRequest(const TileID& tile);
+
+    // Remove a pending list item with the given TileID if present, and if cancelRequest is true
+    // also cancels the corresponding URL request.
+    void removePending(const TileID& _tileId, bool cancelRequest);
 
     std::shared_ptr<Platform> m_platform;
 
     // URL template for requesting tiles from a network or filesystem
     std::string m_urlTemplate;
-
-    std::vector<TileID> m_pending;
-
-    size_t m_maxDownloads;
 
     std::mutex m_mutex;
 
