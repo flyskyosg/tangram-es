@@ -2,18 +2,8 @@
 
 #include "platform.h"
 
-#include <memory>
 #include <jni.h>
 #include <android/asset_manager.h>
-
-void bindJniEnvToThread(JNIEnv* jniEnv);
-void setupJniEnv(JNIEnv* _jniEnv);
-void onUrlSuccess(JNIEnv* jniEnv, jbyteArray jFetchedBytes, jlong jCallbackPtr);
-void onUrlFailure(JNIEnv* jniEnv, jlong jCallbackPtr);
-
-std::string resolveScenePath(const char* path);
-
-std::string stringFromJString(JNIEnv* jniEnv, jstring string);
 
 namespace Tangram {
 
@@ -27,6 +17,8 @@ void markerPickCallback(jobject listener, jobject tangramInstance, const Tangram
 void labelPickCallback(jobject listener, const Tangram::LabelPickResult* labelPickResult);
 void sceneUpdateErrorCallback(jobject updateStatusCallbackRef, const SceneUpdateError& sceneUpdateErrorStatus);
 
+std::string stringFromJString(JNIEnv* jniEnv, jstring string);
+
 class AndroidPlatform : public Platform {
 
 public:
@@ -34,16 +26,21 @@ public:
     AndroidPlatform(JNIEnv* _jniEnv, jobject _assetManager, jobject _tangramInstance);
     void dispose(JNIEnv* _jniEnv);
     void requestRender() const override;
-    std::vector<char> bytesFromFile(const char* _path) const override;
     void setContinuousRendering(bool _isContinuous) override;
-    std::string stringFromFile(const char* _path) const override;
     std::vector<char> systemFont(const std::string& _name, const std::string& _weight, const std::string& _face) const override;
     std::vector<FontSourceHandle> systemFontFallbacksHandle() const override;
-    bool startUrlRequest(const std::string& _url, UrlCallback _callback) override;
-    void cancelUrlRequest(const std::string& _url) override;
+    UrlRequestHandle startUrlRequest(Url _url, UrlCallback _callback) override;
+    void cancelUrlRequest(UrlRequestHandle _request) override;
+
+    static void onUrlSuccess(JNIEnv* jniEnv, jlong jCallbackPtr, jbyteArray jBytes);
+    static void onUrlFailure(JNIEnv* jniEnv, jlong jCallbackPtr, jstring jError);
+
+    static void bindJniEnvToThread(JNIEnv* jniEnv);
+    static void setupJniEnv(JNIEnv* _jniEnv);
 
 private:
 
+    std::vector<char> bytesFromFile(const Url& _url) const;
     bool bytesFromAssetManager(const char* _path, std::function<char*(size_t)> _allocator) const;
     std::string fontPath(const std::string& _family, const std::string& _weight, const std::string& _style) const;
     std::string fontFallbackPath(int _importance, int _weightHint) const;
