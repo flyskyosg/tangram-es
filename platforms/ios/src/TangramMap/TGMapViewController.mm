@@ -146,6 +146,8 @@ __CG_STATIC_ASSERT(sizeof(TGGeoPoint) == sizeof(Tangram::LngLat));
     };
 
     self.map->loadScene([path UTF8String], false, updates, updateCallbackStatus);
+    [self.markersById removeAllObjects];
+
     self.renderRequested = YES;
 }
 
@@ -174,6 +176,7 @@ __CG_STATIC_ASSERT(sizeof(TGGeoPoint) == sizeof(Tangram::LngLat));
     auto updateCallbackStatus = [=](auto sceneUpdateError) {
         if (!self.mapViewDelegate || ![self.mapViewDelegate respondsToSelector:@selector(mapView:didFailSceneUpdateWithError:)]) { return; }
         [self.mapViewDelegate mapView:self didFailSceneUpdateWithError:[TGHelpers errorFromSceneUpdateError:sceneUpdateError]];
+        [self.markersById removeAllObjects];
     };
 
     self.map->loadSceneAsync([path UTF8String], false, onReadyCallback, nullptr, updates, updateCallbackStatus);
